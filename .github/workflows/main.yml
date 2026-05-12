@@ -9,19 +9,23 @@ jobs:
 
     steps:
     - name: Download ngrok
-      run: Invoke-WebRequest https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-windows-amd64.zip -OutFile ngrok.zip
+      run: |
+        Invoke-WebRequest -Uri "https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-windows-amd64.zip" -OutFile "ngrok.zip"
 
     - name: Extract ngrok
-      run: Expand-Archive ngrok.zip
+      run: |
+        Expand-Archive -Path "ngrok.zip" -DestinationPath "." -Force
 
     - name: Add RDP User
       run: |
-        net user admin Password123! /add
+        net user admin "Password123!" /add
         net localgroup administrators admin /add
-        Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -name "fDenyTSConnections" -Value 0
+        Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Control\Terminal Server" -Name "fDenyTSConnections" -Value 0
         Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
 
-    - name: Start ngrok & Keep Alive
+    - name: Start ngrok
+      env:
+        NGROK_AUTH_TOKEN: ${{ secrets.NGROK_AUTH_TOKEN }}
       run: |
-        .\ngrok\ngrok.exe authtoken ${{ secrets.NGROK_AUTH_TOKEN }}
-        .\ngrok\ngrok.exe tcp 3389
+        .\ngrok.exe authtoken $env:NGROK_AUTH_TOKEN
+        .\ngrok.exe tcp 3389
