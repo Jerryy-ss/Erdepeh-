@@ -1,0 +1,27 @@
+name: Windows RDP
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 9999
+
+    steps:
+    - name: Download ngrok
+      run: Invoke-WebRequest https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-windows-amd64.zip -OutFile ngrok.zip
+
+    - name: Extract ngrok
+      run: Expand-Archive ngrok.zip
+
+    - name: Add RDP User
+      run: |
+        net user admin Password123! /add
+        net localgroup administrators admin /add
+        Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -name "fDenyTSConnections" -Value 0
+        Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+
+    - name: Start ngrok & Keep Alive
+      run: |
+        .\ngrok\ngrok.exe authtoken ${{ secrets.NGROK_AUTH_TOKEN }}
+        .\ngrok\ngrok.exe tcp 3389
